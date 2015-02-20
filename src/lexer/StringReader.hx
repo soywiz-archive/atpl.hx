@@ -53,9 +53,10 @@ class StringReader {
 	 *
 	 * @param count Number of characters to skip
 	 */
-    public function skipChars(count) {
+    public function skipChars<T>(count, ?ret:T) {
         this.currentLine += this.string.substr(this.position, count).split("\n").length - 1;
         this.position    += count;
+        return ret;
     }
 
     /**
@@ -70,7 +71,7 @@ class StringReader {
 	 *
 	 * @param count Number of characters to peek.
 	 */
-    public function peekChars(count) {
+    public function peekChars(count):String {
         return this.string.substr(this.position, count);
     }
 
@@ -79,7 +80,7 @@ class StringReader {
 	 *
 	 * @param count Number of characters to read.
 	 */
-    public function readChars(count) {
+    public function readChars(count):String {
         var str = this.peekChars(count);
         this.skipChars(count);
         return str;
@@ -88,7 +89,7 @@ class StringReader {
     /**
 	 * Reads a single character as a string.
 	 */
-    public function readChar() {
+    public function readChar():String {
         return this.readChars(1);
     }
 
@@ -98,17 +99,20 @@ class StringReader {
 	 *
 	 * @param regexp Regular expression to find
 	 */
-    public function findRegexp(regexp: RegExp) {
-        var match = this.string.substr(this.position).match(regexp);
-        if (match == null) {
+    public function findRegexp(regexp: EReg) {
+        
+        var match = regexp.match(this.string.substr(this.position));
+        if (!match) {
             return {
                 position : null,
                 length   : null
             };
         } else {
+            //trace(regexp);
+            var pos = regexp.matchedPos();
             return {
-                position : match['index'],
-                length   : match[0].length
+                position : pos.pos,
+                length   : pos.len
             };
         }
     }

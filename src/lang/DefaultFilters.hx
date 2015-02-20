@@ -1,4 +1,5 @@
 package lang;
+import runtime.RuntimeUtils;
 class DefaultFilters {
     /**
      * Filter that obtains the absolute value of a number.
@@ -180,8 +181,8 @@ class DefaultFilters {
             return (<any[]>value).concat(add);
         } else {
             var object = {};
-            for (var key in value) object[key] = value[key];
-            for (var key in add) object[key] = add[key];
+            for (key in value) object[key] = value[key];
+            for (key in add) object[key] = add[key];
             return object;
         }
     }
@@ -209,113 +210,112 @@ class DefaultFilters {
      *
      * @see http://twig.sensiolabs.org/doc/filters/raw.html
      */
-    static raw(value: string) {
-    var runtimeContext: RuntimeContext.RuntimeContext = <any>this;
-    runtimeContext.currentAutoescape = false;
-    return value;
+    static public function raw(runtimeContext: RuntimeContext, value: Stirng) {
+        runtimeContext.currentAutoescape = false;
+        return value;
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/replace.html
      */
-    static replace(value: string, replace_pairs: any) {
-    return String(value).replace(new RegExp("(" + Object.keys(replace_pairs).map(item => RuntimeUtils.quoteRegExp(item)).join('|') + ")", "g"), (match) => {
-    return replace_pairs[match];
-    });
+    static public function replace(value: String, replace_pairs: Dynamic) {
+        return String(value).replace(new RegExp("(" + Object.keys(replace_pairs).map(item => RuntimeUtils.quoteRegExp(item)).join('|') + ")", "g"), (match) => {
+            return replace_pairs[match];
+        });
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/reverse.html
      */
-    static reverse(value: any) {
-    if (!RuntimeUtils.defined(value)) return value;
-    if (RuntimeUtils.isArray(value)) return value.reverse();
-    if (RuntimeUtils.isNumber(value)) value = value.toString();
-    if (RuntimeUtils.isString(value)) {
-    var ret = '';
-    for (var n = 0; n < value.length; n++) ret += value.charAt(value.length - n - 1);
-    return ret;
-    }
-    //if (typeof value == 'string')
-    throw (new Error("Not implemented filter [reverse] with value type [" + (typeof value) + ']'));
+    static public function reverse(value: Dynamic) {
+        if (!RuntimeUtils.defined(value)) return value;
+        if (RuntimeUtils.isArray(value)) return value.reverse();
+        if (RuntimeUtils.isNumber(value)) value = value.toString();
+        if (RuntimeUtils.isString(value)) {
+            var ret = '';
+            for (var n = 0; n < value.length; n++) ret += value.charAt(value.length - n - 1);
+            return ret;
+        }
+        //if (typeof value == 'string')
+        throw (new Error("Not implemented filter [reverse] with value type [" + (typeof value) + ']'));
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/slice.html
      */
-    static slice(value: any, start, length, preserve_keys?) {
-    if (RuntimeUtils.isArray(value)) return (<any[]>value).slice(start, start + length);
-    if (RuntimeUtils.isNumber(value)) value = value.toString();
-    if (RuntimeUtils.isString(value)) return (<string>value).substr(start, length);
-    return value;
+    static public function slice(value: Dynamic, start, length, preserve_keys?) {
+        if (RuntimeUtils.isArray(value)) return (<any[]>value).slice(start, start + length);
+        if (RuntimeUtils.isNumber(value)) value = value.toString();
+        if (RuntimeUtils.isString(value)) return (<string>value).substr(start, length);
+        return value;
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/sort.html
      */
-    static sort(value: any) {
-    if (value instanceof Array) return value.sort();
-    return value;
+    static public function sort(value: any) {
+        if (Std.is(value, Array)) return value.sort();
+        return value;
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/split.html
      */
-    static split(_value: any, delimiter: string, limit: number) {
-    var value = RuntimeUtils.toString(_value);
-    return RuntimeUtils.split(value, delimiter, limit);
+    static public function split(_value: any, delimiter: string, limit: number) {
+        var value = RuntimeUtils.toString(_value);
+        return RuntimeUtils.split(value, delimiter, limit);
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/striptags.html
      */
-    static striptags(value: any) {
-    return RuntimeUtils.strip_tags(value);
+    static public function striptags(value: Dynamic) {
+        return RuntimeUtils.strip_tags(value);
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/title.html
      */
-    static title(value: any) {
-    return RuntimeUtils.title(value);
+    static public function title(value: Dynamic) {
+        return RuntimeUtils.title(value);
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/trim.html
      */
-    static trim(value: any, characters?: string) {
-    return RuntimeUtils.trim(value, characters);
+    static public function trim(value: Dynamic, ?characters: String) {
+        return RuntimeUtils.trim(value, characters);
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/upper.html
      */
-    static upper(value: any) {
-    return String(value).toUpperCase();
+    static public function upper(value: Dynamic) {
+        return String(value).toUpperCase();
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/url_encode.html
      */
-    static url_encode(value: any) {
-    return RuntimeUtils.escapeUrlString(String(value)).replace('%20', '+');
+    static public function url_encode(value: Dynamic) {
+        return RuntimeUtils.escapeUrlString(String(value)).replace('%20', '+');
     }
 
     /**
      *
      * @see http://twig.sensiolabs.org/doc/filters/spaceless.html
      */
-    static spaceless(value: any) {
-    return RuntimeUtils.toString(value).replace(/>\s+</g, '><');
+    static public function spaceless(value: Dynamic) {
+        return RuntimeUtils.toString(value).replace(~/>\s+</g, '><');
     }
 }

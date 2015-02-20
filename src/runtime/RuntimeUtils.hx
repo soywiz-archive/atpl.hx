@@ -1,76 +1,77 @@
 package runtime;
 class RuntimeUtils {
+    static public function tryFinally<T>(_try: Void -> T, _finally: Void -> Void) {
+        try {
+            var result = _try();
+            _finally();
+            return result;
+        } catch (e:Dynamic) {
+            _finally();
+            throw e;
+        }
+        return null;
+    }
 
-    export function normalizePath(path) {
-var components = [];
-var notNormalizedComponents = path.split(/[\\\/]/g);
-path = path.replace(/\\/g, '/');
-for (var index in notNormalizedComponents) {
-var component = notNormalizedComponents[index];
-switch (component) {
-case '':
-break;
-case '.':
-break;
-case '..':
-if (components.length > 0) components.pop();
-break;
-default:
-components.push(component);
-break;
-}
-}
-var retval = components.join('/');
-if (path.match(/^\//)) {
-retval = '/' + retval;
-}
-return retval;
-}
-
-export function quoteRegExp(str: string): string {
-return (str + '').replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1");
-};
-
-export function pathIsInside(basePath, path) {
-basePath = normalizePath(basePath) + '/';
-path = normalizePath(path) + '/';
-
-return (path.substr(0, basePath.length) == basePath);
+    static public function normalizePath(path) {
+        var components = [];
+        //var notNormalizedComponents = path.split(~/[\\\/]/g);
+        //path = path.replace(~/\\/g, '/');
+        for (index in notNormalizedComponents) {
+            var component = notNormalizedComponents[index];
+            switch (component) {
+                case '', '.', '..': if (components.length > 0) components.pop();
+                default: components.push(component);
+            }
+        }
+        var retval = components.join('/');
+        if (path.match(~/^\//)) retval = '/' + retval;
+        return retval;
 }
 
-export function interpretNumber(number, radix?) {
-number = String(number);
-if (number == '0') return 0;
-if (radix === undefined) {
-if (number.substr(0, 2).toLowerCase() == '0x') return interpretNumber(number.substr(2), 16);
-if (number.substr(0, 2).toLowerCase() == '0b') return interpretNumber(number.substr(2), 2);
-if (number.substr(0, 1) == '0') return interpretNumber(number.substr(1), 8);
-radix = 10;
-}
-if (radix == 10) return parseFloat(number);
-return parseInt(number, radix);
-}
+    static public function quoteRegExp(str: String): String {
+        return (str + '').replace(~/([.?*+^$[\]\\(){}|-])/g, "\\$1");
+    }
 
-export function ensureArray(value: any): any[] {
-if (isArray(value)) return value;
-return [value];
-}
+    static public function pathIsInside(basePath, path) {
+        basePath = normalizePath(basePath) + '/';
+        path = normalizePath(path) + '/';
 
-export function ensureNumber(value: any) {
-if (isNumber(value)) return value;
-return parseFloat(String(value));
-}
+        return (path.substr(0, basePath.length) == basePath);
+    }
 
-export function capitalize(str: string) {
-str = String(str);
-return str.charAt(0).toUpperCase() + str.substr(1);
-}
+    static public function interpretNumber(number, ?radix:Int) {
+        number = String(number);
+        if (number == '0') return 0;
+        if (radix === undefined) {
+        if (number.substr(0, 2).toLowerCase() == '0x') return interpretNumber(number.substr(2), 16);
+        if (number.substr(0, 2).toLowerCase() == '0b') return interpretNumber(number.substr(2), 2);
+        if (number.substr(0, 1) == '0') return interpretNumber(number.substr(1), 8);
+        radix = 10;
+        }
+        if (radix == 10) return parseFloat(number);
+        return parseInt(number, radix);
+    }
 
-export function title(str: string) {
-return String(str).replace(/\w+/g, (word) => {
-return capitalize(word);
-});
-}
+    static public function ensureArray(value: Dynamic): Array<Dynamic> {
+        if (isArray(value)) return value;
+        return [value];
+    }
+
+    static public function ensureNumber(value: Dynamic) {
+        if (isNumber(value)) return value;
+        return parseFloat(String(value));
+    }
+
+    static public function capitalize(str: String) {
+        str = String(str);
+        return str.charAt(0).toUpperCase() + str.substr(1);
+    }
+
+    static public function title(str: String) {
+        return String(str).replace(~/\w+/g, (word) => {
+            return capitalize(word);
+        });
+    }
 
 export function trim(value: any, characters?: string) {
 if (characters !== undefined) {

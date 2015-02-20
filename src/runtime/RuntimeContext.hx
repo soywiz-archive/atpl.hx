@@ -1,5 +1,7 @@
 package runtime;
 
+import haxe.Function;
+import haxe.Json;
 class RuntimeContext {
     public var output: string = '';
     public var scope: Scope;
@@ -60,12 +62,12 @@ class RuntimeContext {
     public function captureOutput(callback: Void -> Void) {
         var oldOutput = this.output;
         this.output = '';
-        try {
+        RuntimeUtils.tryFinally(function() {
             callback();
             return this.output;
-        } finally {
+        }, function() {
             this.output = oldOutput;
-        }
+        });
     }
 
     public function trimSpaces() {
@@ -82,10 +84,10 @@ class RuntimeContext {
         this.output += text;
     }
 
-    public function getEscapedText(text: any): any {
+    public function getEscapedText(text: Dynamic): Dynamic {
         try {
             if (text == null) return '';
-            if (!RuntimeUtils.isString(text)) text = JSON.stringify(text);
+            if (!RuntimeUtils.isString(text)) text = Json.stringify(text);
             //console.log(this.currentAutoescape);
             switch (this.currentAutoescape) {
                 case false: text = text; break;
@@ -166,26 +168,26 @@ class RuntimeContext {
     }
 
     public function include(info: any, scope: any = {}, only: boolean = false, tokenParserContextCommonInfo?: any) {
-        this.createScope(() => {
-        if (scope !== undefined) this.scope.setAll(scope);
-        if (RuntimeUtils.isString(info)) {
-        var name = <string>info;
-        var IncludeTemplate = new ((this.templateParser.compile(name, this, new TokenParserContext.TokenParserContextCommon(tokenParserContextCommonInfo))).class )();
-        this._KeepTemplateHierarchy(() => {
-        this.LeafTemplate = this.CurrentTemplate = this.RootTemplate = IncludeTemplate;
-        IncludeTemplate.__main(this);
-        });
-        } else {
-        var IncludeTemplate = new (info.class )();
-        this._KeepTemplateHierarchy(() => {
-        this.LeafTemplate = this.CurrentTemplate = this.RootTemplate = IncludeTemplate;
-        IncludeTemplate.__main(this);
-        });
-        }
+        this.createScope(function() {
+            if (scope != null) this.scope.setAll(scope);
+            if (RuntimeUtils.isString(info)) {
+                var name = <string>info;
+                var IncludeTemplate = new ((this.templateParser.compile(name, this, new TokenParserContext.TokenParserContextCommon(tokenParserContextCommonInfo))).class )();
+                this._KeepTemplateHierarchy(() => {
+                this.LeafTemplate = this.CurrentTemplate = this.RootTemplate = IncludeTemplate;
+                IncludeTemplate.__main(this);
+                });
+            } else {
+                var IncludeTemplate = new (info.class )();
+                this._KeepTemplateHierarchy(() => {
+                this.LeafTemplate = this.CurrentTemplate = this.RootTemplate = IncludeTemplate;
+                IncludeTemplate.__main(this);
+                });
+            }
         }, only);
     }
 
-    public function $import(name: string) {
+    public function $import(name: String) {
         var IncludeTemplate = new ((this.templateParser.compile(name, this)).class)();
         //console.log("<<<<<<<<<<<<<<<<<<<<<<<<<<");
         //console.log(IncludeTemplate.macros);
@@ -194,9 +196,9 @@ class RuntimeContext {
         //return 'Hello World!';
     }
 
-    public function fromImport(name: string, pairs: any[]) {
-        var keys = this.import(name);
-        pairs.forEach((pair) => {
+    public function fromImport(name: String, pairs: Array<Dynamic>) {
+        var keys = this.$import(name);
+        pairs.forEach(function(pair) {
             var from = pair[0];
             var to = pair[1];
             //console.log(from + " : " + to);
@@ -251,18 +253,18 @@ class RuntimeContext {
         //if (Current['__proto__'] && Current['__proto__']['__proto__']) ret = this._getBlocks(Current['__proto__']['__proto__']);
 
         //console.log('*************');
-        for (var key in Current) {
+        for (key in Current) {
             //console.log(key);
-            if (key.match(/^block_/)) ret[key] = Current[key];
+            if (key.match(~/^block_/)) ret[key] = Current[key];
         }
         return ret;
     }
 
     private function _putBlock(Current: any, name: string) {
         var method = (Current[name]);
-        if (method === undefined) {
+        if (method == null) {
             console.log(Current['__proto__']);
-            throw (new Error("Can't find block '" + name + "' in '" + Current.name + ":" + this.currentBlockName + "'"));
+            throw "Can't find block '" + name + "' in '" + Current.name + ":" + this.currentBlockName + "'";
         }
         return method.call(Current, this);
     }
@@ -310,39 +312,38 @@ class RuntimeContext {
         return this.scope.set(key, value);
     }
 
-    public function slice(object: any, left: any, right: any):any {
+    public function slice(object: Dynamic, left: Dynamic, right: Dynamic):Dynamic {
         if (RuntimeUtils.isString(object)) {
-            return (<String>object).substr(left, right);
+            return cast(object, String).substr(left, right);
         }
         if (RuntimeUtils.isArray(object)) {
-            return (<any[]>object).slice(left, right);
+            return cast(object, Dynamic).slice(left, right);
         }
-        return undefined;
+        return null;
     }
 
-    public function access(object: any, key: any) {
-        if (object === undefined || object === null) return null;
-        var ret = object[key];
-        return ret;
+    public function access(object: Dynamic, key: String) {
+        if (object == null) return null;
+        return Reflect.field(object, key);
     }
 
-    public function accessCall(object: any, key: any, _arguments: any[]) {
+    public function accessCall(object: Dynamic, key: Dynamic, _arguments: Array<Dynamic>) {
         var ret = this.access(object, key);
-        if (ret instanceof Function) ret = (<Function>ret).apply(object, _arguments);
+        if (Reflect.isFunction(ret)) ret = Reflect.callMethod(object, ret, _arguments);
         return ret;
     }
 
-    public function emptyList(value: any) {
-        if (value === undefined || value === null) return true;
-        if (value instanceof Array || value instanceof String) return (value.length == 0);
+    public function emptyList(value: Dynamic) {
+        if (value == null) return true;
+        if (Std.is(value, Array) || Std.is(value, String)) return (value.length == 0);
         return false;
     }
 
-    public function ternaryShortcut(value: any, _default: any) {
+    public function ternaryShortcut(value: Dynamic, _default: Dynamic) {
         return value ? value : _default;
     }
 
-    public function inArray(value: any, array: any) {
+    public function inArray(value: Dynamic, array: Dynamic) {
         return RuntimeUtils.inArray(value, array);
     }
 }
