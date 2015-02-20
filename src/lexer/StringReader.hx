@@ -99,21 +99,12 @@ class StringReader {
 	 *
 	 * @param regexp Regular expression to find
 	 */
-    public function findRegexp(regexp: EReg) {
-        
+    public function findRegexp(regexp: EReg):MatchResult {
         var match = regexp.match(this.string.substr(this.position));
-        if (!match) {
-            return {
-                position : null,
-                length   : null
-            };
-        } else {
-            //trace(regexp);
-            var pos = regexp.matchedPos();
-            return {
-                position : pos.pos,
-                length   : pos.len
-            };
-        }
+        //if (!match) return new MatchResult(false, 0, 0);
+        if (!match) return new MatchResult(false, -1, -1);
+        //trace(regexp);
+        var pos = regexp.matchedPos();
+        return new MatchResult(true, pos.pos, pos.len);
     }
 }

@@ -63,15 +63,15 @@ class ExpressionTokenizer implements ITokenizer {
 	 */
     public function hasMore(): Bool {
         if (this.end) return false;
-        return this.stringReader.hasMore() && (this.stringReader.findRegexp(~/^(\s*$|\-?[%\}]\})/).position != 0);
+        return this.stringReader.hasMore() && (this.stringReader.findRegexp(~/^(\s*$|\-?[%\}]\})/).noMatchesAtStart());
     }
 
     public var end = false;
     public var stringOffset: Int = 0;
 
-    private function emitToken(type:String, rawValue:Dynamic, ?value:Dynamic) {
+    private function emitToken(type:String, rawValue:String, ?value:Dynamic) {
         if (value == null) value = rawValue;
-        return new Token(type, value, rawValue, this.stringOffset);
+        return new Token(type, value, rawValue, this.stringOffset, this.stringOffset + ((rawValue != null) ? rawValue.length : 0), null);
     }
 
     /**
@@ -80,7 +80,7 @@ class ExpressionTokenizer implements ITokenizer {
     public function readNext(): Token {
         //this.end = false;
         while (!this.end && this.stringReader.hasMore()) {
-            if (this.stringReader.findRegexp(~/^\-?[%\}]\}/).position == 0) {
+            if (this.stringReader.findRegexp(~/^\-?[%\}]\}/).matchesAtStart()) {
                 this.end = true;
                 continue;
             }
@@ -99,7 +99,7 @@ class ExpressionTokenizer implements ITokenizer {
                 case '\'': case '"':
                     //throw(new Error("Strings not implemented"));
                     var result = this.stringReader.findRegexp(~/^(["'])(?:(?=(\\?))\2.)*?\1/);
-                    if (result.position != 0) throw "Invalid string";
+                    if (result.noMatchesAtStart()) throw "Invalid string";
                     var value = this.stringReader.readChars(result.length);
                     try {
                         if (value.charAt(0) == "'") {
@@ -115,7 +115,7 @@ class ExpressionTokenizer implements ITokenizer {
                     // Numbers
                     if (~/^\d$/.match(currentChar)) {
                         var result = this.stringReader.findRegexp(~/^(0b[0-1]+|0x[0-9A-Fa-f]+|0[0-7]*|[1-9]\d*(\.\d+)?)/);
-                        if (result.position != 0) throw "Invalid numeric";
+                        if (result.noMatchesAtStart()) throw "Invalid numeric";
                         var value = this.stringReader.readChars(result.length);
                         return this.emitToken('number', value, RuntimeUtils2.interpretNumber(value));
                     } else {
@@ -146,7 +146,7 @@ class ExpressionTokenizer implements ITokenizer {
                         // An ID
                         else if (idex.match(currentChar)) {
                             var result = this.stringReader.findRegexp(~/^[a-z_\$]\w*/i);
-                            if (result.position != 0) throw "Assertion failed! Not expected!";
+                            if (result.noMatchesAtStart()) throw "Assertion failed! Not expected!";
                             var value = this.stringReader.readChars(result.length);
                             return this.emitToken('id', value);
                         } else {
